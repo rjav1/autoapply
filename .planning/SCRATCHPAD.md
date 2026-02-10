@@ -67,7 +67,12 @@ Progress tracker. Updated after each major step.
 
 ## In Progress
 
-- [ ] Phase 2.2: Field Mapping — Map Workday form fields to profile schema
+- [x] Phase 2.2: Field Mapping ✅
+  - `modules/types.ts` — ProfileData, FieldMapping, FillResult types
+  - `modules/base-module.ts` — ATSModule interface
+  - `modules/workday.ts` — Full Workday module with 12+ field mappings
+  - `lib/evasion.ts` — Bot evasion utilities (human typing, delays, mouse sim)
+  - `docs/ERRORS.md` — Error tracking document
 - [ ] Phase 2.3: Field Detection Audit — Test on real Workday applications
 
 ## Decisions Made

@@ -1,10 +1,13 @@
+/**
+ * Workday Content Script
+ * 
+ * Entry point for Workday ATS automation.
+ * Uses the Workday module for detection and form filling.
+ */
+
 import type { PlasmoCSConfig } from "plasmo"
-import { 
-  detectWorkdayPage, 
-  waitForWorkdayContent, 
-  watchForNavigation,
-  type PageDetectionResult 
-} from "~lib/detection"
+import { workdayModule } from "~modules/workday"
+import type { ProfileData } from "~modules/types"
 
 export const config: PlasmoCSConfig = {
   matches: [
@@ -16,105 +19,81 @@ export const config: PlasmoCSConfig = {
     "https://*.wd4.myworkday.com/*",
     "https://*.wd5.myworkday.com/*",
   ],
-  all_frames: false, // Only run in main frame
+  all_frames: false,
   run_at: "document_idle"
 }
 
-// Workday form field selectors
-const FIELD_SELECTORS = {
-  firstName: '[data-automation-id="legalNameSection_firstName"]',
-  lastName: '[data-automation-id="legalNameSection_lastName"]',
-  email: '[data-automation-id="email"]',
-  phone: '[data-automation-id="phone-number"]',
-  address: '[data-automation-id="addressSection_addressLine1"]',
-  city: '[data-automation-id="addressSection_city"]',
-  postalCode: '[data-automation-id="addressSection_postalCode"]',
-  resumeUpload: '[data-automation-id="file-upload-input-ref"]'
-}
-
-interface ProfileData {
-  firstName: string
-  lastName: string
-  email: string
-  phone?: string
-  address?: string
-  city?: string
-  postalCode?: string
-}
-
-// Current page detection state
-let currentDetection: PageDetectionResult | null = null
+// Current detection state
+let lastDetection = workdayModule.detect()
+let lastUrl = window.location.href
 
 /**
  * Send detection result to background script
  */
-function notifyDetection(result: PageDetectionResult) {
-  currentDetection = result
+function notifyDetection() {
+  const detection = workdayModule.detect()
+  lastDetection = detection
   
-  console.log(`[AutoApply] Page detected:`, {
-    type: result.pageType,
-    isApplication: result.isApplicationPage,
-    confidence: result.confidence,
-    elements: result.detectedElements.length
+  console.log("[AutoApply:Workday] Page detected:", {
+    pageType: detection.pageType,
+    isApplication: detection.isApplicationPage,
+    confidence: detection.confidence.toFixed(2),
+    company: detection.company,
+    jobTitle: detection.jobTitle
   })
 
   chrome.runtime.sendMessage({
     type: "PAGE_DETECTED",
-    ...result
+    platform: "workday",
+    ...detection
   }).catch(err => {
-    // Background might not be ready yet
-    console.log("[AutoApply] Could not notify background:", err.message)
+    console.log("[AutoApply:Workday] Could not notify background:", err.message)
   })
 }
 
 /**
- * Fill a single form field
+ * Watch for SPA navigation
  */
-async function fillField(selector: string, value: string | undefined): Promise<boolean> {
-  if (!value) return false
+function watchNavigation() {
+  let debounceTimer: number | null = null
   
-  const element = document.querySelector(selector) as HTMLInputElement
-  if (!element) return false
-
-  // Focus and fill
-  element.focus()
-  element.value = value
-  
-  // Dispatch events to trigger Workday's React handlers
-  element.dispatchEvent(new Event("input", { bubbles: true }))
-  element.dispatchEvent(new Event("change", { bubbles: true }))
-  element.dispatchEvent(new Event("blur", { bubbles: true }))
-  
-  return true
-}
-
-/**
- * Auto-fill all detected Workday form fields
- */
-async function autoFillWorkday(profile: ProfileData) {
-  if (!currentDetection?.isApplicationPage) {
-    console.log("[AutoApply] Not on application page, skipping autofill")
-    return { success: false, reason: "not_application_page" }
+  const checkNavigation = () => {
+    const currentUrl = window.location.href
+    if (currentUrl !== lastUrl) {
+      lastUrl = currentUrl
+      
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = window.setTimeout(() => {
+        // Wait for Workday to load new content
+        setTimeout(notifyDetection, 1500)
+      }, 500)
+    }
   }
 
-  console.log("[AutoApply] Starting Workday autofill...")
-  
-  const results = {
-    firstName: await fillField(FIELD_SELECTORS.firstName, profile.firstName),
-    lastName: await fillField(FIELD_SELECTORS.lastName, profile.lastName),
-    email: await fillField(FIELD_SELECTORS.email, profile.email),
-    phone: await fillField(FIELD_SELECTORS.phone, profile.phone),
-    address: await fillField(FIELD_SELECTORS.address, profile.address),
-    city: await fillField(FIELD_SELECTORS.city, profile.city),
-    postalCode: await fillField(FIELD_SELECTORS.postalCode, profile.postalCode)
+  // Override history methods
+  const originalPushState = history.pushState
+  const originalReplaceState = history.replaceState
+
+  history.pushState = function(...args) {
+    originalPushState.apply(this, args)
+    checkNavigation()
   }
 
-  const filled = Object.values(results).filter(Boolean).length
-  const total = Object.keys(results).length
-  
-  console.log(`[AutoApply] Filled ${filled}/${total} fields`)
-  
-  return { success: true, filled, total, results }
+  history.replaceState = function(...args) {
+    originalReplaceState.apply(this, args)
+    checkNavigation()
+  }
+
+  window.addEventListener("popstate", checkNavigation)
+
+  // Also watch DOM changes
+  const observer = new MutationObserver(() => {
+    if (window.location.href !== lastUrl) {
+      checkNavigation()
+    }
+  })
+
+  observer.observe(document.body, { childList: true, subtree: true })
 }
 
 /**
@@ -123,64 +102,102 @@ async function autoFillWorkday(profile: ProfileData) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case "AUTOFILL":
-      autoFillWorkday(message.profile)
-        .then(results => sendResponse(results))
+      handleAutoFill(message.profile)
+        .then(result => sendResponse(result))
         .catch(error => sendResponse({ success: false, error: error.message }))
-      return true // Keep channel open for async response
+      return true
 
     case "GET_PAGE_STATUS":
-      sendResponse(currentDetection)
+      sendResponse({
+        detection: lastDetection,
+        status: workdayModule.getStatus()
+      })
       return false
 
     case "RE_DETECT":
-      waitForWorkdayContent(2000).then(() => {
-        const result = detectWorkdayPage()
-        notifyDetection(result)
-        sendResponse(result)
-      })
+      notifyDetection()
+      sendResponse(lastDetection)
+      return false
+      
+    case "SUBMIT":
+      handleSubmit()
+        .then(result => sendResponse(result))
+        .catch(error => sendResponse({ success: false, error: error.message }))
       return true
   }
 })
 
 /**
- * Initialize detection on page load
+ * Handle autofill request
  */
-async function initialize() {
-  console.log("[AutoApply] Workday content script initializing...")
-
-  // Wait for Workday's dynamic content
-  await waitForWorkdayContent(5000)
-
-  // Initial detection
-  const result = detectWorkdayPage()
-  notifyDetection(result)
-
-  // Watch for SPA navigation
-  const cleanup = watchForNavigation((newResult) => {
-    notifyDetection(newResult)
-    
-    // Auto-fill if enabled and on application page
-    if (newResult.isApplicationPage) {
-      chrome.storage.local.get(["enabled", "profile"], (data) => {
-        if (data.enabled && data.profile) {
-          setTimeout(() => autoFillWorkday(data.profile), 1000)
-        }
-      })
+async function handleAutoFill(profile: ProfileData) {
+  if (!lastDetection.isApplicationPage) {
+    return { 
+      success: false, 
+      error: "Not on an application page",
+      pageType: lastDetection.pageType
     }
-  })
+  }
 
-  // Cleanup on unload
-  window.addEventListener("unload", cleanup)
-
-  // Auto-fill if already enabled and on application page
-  if (result.isApplicationPage) {
-    chrome.storage.local.get(["enabled", "profile"], (data) => {
-      if (data.enabled && data.profile) {
-        setTimeout(() => autoFillWorkday(data.profile), 1000)
-      }
+  console.log("[AutoApply:Workday] Starting autofill...")
+  
+  try {
+    const result = await workdayModule.fillForm(profile)
+    
+    console.log("[AutoApply:Workday] Fill result:", {
+      success: result.success,
+      filled: result.filledFields.length,
+      failed: result.failedFields.length,
+      manual: result.manualFields.length,
+      duration: `${result.duration}ms`
     })
+    
+    return result
+  } catch (error) {
+    console.error("[AutoApply:Workday] Fill error:", error)
+    throw error
   }
 }
 
-// Start initialization
+/**
+ * Handle submit request
+ */
+async function handleSubmit() {
+  if (!lastDetection.isApplicationPage) {
+    return {
+      success: false,
+      error: "Not on an application page",
+      requiredManualIntervention: true
+    }
+  }
+  
+  console.log("[AutoApply:Workday] Submitting application...")
+  return workdayModule.submit()
+}
+
+/**
+ * Initialize
+ */
+function initialize() {
+  console.log("[AutoApply:Workday] Content script initializing...")
+  
+  // Initial detection (wait for page to stabilize)
+  setTimeout(() => {
+    notifyDetection()
+    
+    // Auto-fill if enabled and on application page
+    if (lastDetection.isApplicationPage) {
+      chrome.storage.local.get(["enabled", "profile"], (data) => {
+        if (data.enabled && data.profile) {
+          console.log("[AutoApply:Workday] Auto-fill enabled, filling form...")
+          handleAutoFill(data.profile)
+        }
+      })
+    }
+  }, 2000)
+  
+  // Watch for navigation
+  watchNavigation()
+}
+
 initialize()
