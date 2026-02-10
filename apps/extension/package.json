@@ -1,6 +1,8 @@
 {
   "name": "@autoapply/extension",
+  "displayName": "AutoApply",
   "version": "0.0.1",
+  "description": "Auto-fill job applications on Workday, Greenhouse, and more",
   "private": true,
   "scripts": {
     "dev": "plasmo dev",
