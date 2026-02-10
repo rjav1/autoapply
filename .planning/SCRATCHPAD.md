@@ -73,7 +73,16 @@ Progress tracker. Updated after each major step.
   - `modules/workday.ts` — Full Workday module with 12+ field mappings
   - `lib/evasion.ts` — Bot evasion utilities (human typing, delays, mouse sim)
   - `docs/ERRORS.md` — Error tracking document
-- [ ] Phase 2.3: Field Detection Audit — Test on real Workday applications
+- [x] Phase 2.3: Real Workday Testing (NVIDIA careers) ✅
+  - Verified `data-automation-id` selectors against live site
+  - Discovered actual login field IDs: `email`, `password`, `signInContent`
+  - Found honeypot field: `beecatcher` (NEVER fill!)
+  - Updated detection selectors with real values
+  - Documented findings in ERRORS.md
+
+## Next Up
+- [ ] Phase 3: Auto-Fill Engine — implement actual form filling logic
+- [ ] Need to test on more Workday sites to verify selector consistency
 
 ## Decisions Made
 

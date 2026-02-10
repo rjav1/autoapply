@@ -137,10 +137,20 @@ const WORKDAY_DETECTION = {
   
   // Login/account page indicators
   loginIndicators: [
-    '[data-automation-id="signInLink"]',
+    '[data-automation-id="signInContent"]',
     '[data-automation-id="createAccountLink"]',
-    '[data-automation-id="signInUserName"]',
-    '[data-automation-id="signInPassword"]'
+    '[data-automation-id="signInSubmitButton"]',
+    '[data-automation-id="GoogleSignInButton"]',
+    '[data-automation-id="SignInWithEmailButton"]',
+    '[data-automation-id="email"][type="text"]',
+    '[data-automation-id="password"][type="password"]',
+    '[data-automation-id="createAccountCheckbox"]'
+  ],
+  
+  // Honeypot fields to NEVER fill (bot detection)
+  honeypotSelectors: [
+    '[data-automation-id="beecatcher"]',
+    'input[name="website"]'
   ],
   
   // URL patterns
