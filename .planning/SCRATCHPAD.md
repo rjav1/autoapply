@@ -31,7 +31,9 @@ Progress tracker. Updated after each major step.
 
 ---
 
-## Current Status: Phase 1 Ready to Start 🚀
+## Current Status: Phase 2.1 Complete ✅
+
+**GitHub Repo:** https://github.com/rjav1/autoapply
 
 ## Completed Steps
 
@@ -55,13 +57,18 @@ Progress tracker. Updated after each major step.
 - [x] **pnpm install** — All dependencies installed
 - [x] **Extension builds** — `pnpm plasmo build` works ✅
 - [x] **Dashboard builds** — `pnpm next build` works ✅
-- [x] **Git commit** — All scaffold files committed
+- [x] **GitHub repo created** — rjav1/autoapply
+- [x] **EXECUTION-PLAN.md created** — PM workflow with agent delegation
+- [x] **Phase 2.1: Workday Page Detection** ✅
+  - `lib/detection.ts` — URL + DOM detection logic
+  - Content script with SPA navigation handling
+  - Background tracks per-tab state
+  - Popup shows detection status + confidence
 
 ## In Progress
 
-- [ ] GitHub repo creation + push (need `gh` CLI or manual setup)
-- [ ] Phase 1.1: Extension skeleton (popup, background, content scripts)
-- [ ] Phase 1.2: Dashboard auth setup (NextAuth + Google OAuth)
+- [ ] Phase 2.2: Field Mapping — Map Workday form fields to profile schema
+- [ ] Phase 2.3: Field Detection Audit — Test on real Workday applications
 
 ## Decisions Made
 

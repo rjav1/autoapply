@@ -31,10 +31,10 @@
 - [x] Prisma schema
 - [x] Basic page
 
-### 1.3 GitHub Setup ⏳ BLOCKED
-- [ ] Create repo
-- [ ] Push initial commit
-- [ ] Set up branch protection (optional)
+### 1.3 GitHub Setup ✅ DONE
+- [x] Create repo (rjav1/autoapply)
+- [x] Push initial commit
+- [ ] Set up branch protection (optional, deferred)
 
 ---
 
@@ -42,18 +42,21 @@
 
 **Goal:** Extension detects Workday application pages and identifies fillable fields.
 
-### 2.1 Workday Page Detection
-**Owner:** Dev Agent
-**Definition of Done:**
-- [ ] Content script activates ONLY on Workday application pages
-- [ ] Detects application vs. job listing vs. other pages
-- [ ] Sends detection status to popup
+### 2.1 Workday Page Detection ✅ DONE
+**Completed:** 2026-02-10
+**Files:**
+- `apps/extension/lib/detection.ts` — Detection utilities
+- `apps/extension/contents/workday.ts` — Content script with SPA handling
+- `apps/extension/background.ts` — Per-tab state tracking
+- `apps/extension/popup.tsx` — Status display
 
-**Test Criteria:**
-- Works on myworkdayjobs.com domains
-- Works on *.workday.com/*/job-apply/* paths
-- Does NOT activate on job search/listing pages
-- Handles SPAs (page changes without full reload)
+**Implemented:**
+- [x] Content script activates ONLY on Workday application pages
+- [x] Detects application vs. job listing vs. other pages
+- [x] Sends detection status to popup
+- [x] Handles SPAs (MutationObserver + history API hooks)
+- [x] Confidence scoring based on URL + DOM matches
+- [x] Badge shows "ON" when on application page
 
 ### 2.2 Field Mapping
 **Owner:** Dev Agent
@@ -241,12 +244,12 @@ CONSTRAINTS:
 | Phase | Status | Progress |
 |-------|--------|----------|
 | 1. Foundation | ✅ | 100% |
-| 2. Workday Detection | ⏳ | 0% |
+| 2. Workday Detection | 🔄 | 33% (2.1 done) |
 | 3. Auto-Fill Engine | ⏳ | 0% |
 | 4. Dashboard & Auth | ⏳ | 0% |
 | 5. Polish & Ship | ⏳ | 0% |
 
-**Next Action:** Set up GitHub repo, then spawn dev agent for Phase 2.1 (Workday Page Detection)
+**Next Action:** Phase 2.2 - Field Mapping (map Workday form fields to profile schema)
 
 ---
 
