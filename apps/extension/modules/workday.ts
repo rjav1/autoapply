@@ -8,6 +8,7 @@
 import { BaseATSModule, type DetectionResult, type LoginStatus, type SubmitResult } from "./base-module"
 import type { ProfileData, FillResult, FieldMapping, DetectedField, FilledField, FailedField, ManualField } from "./types"
 import { humanType, humanClick, humanScroll, randomDelay, shortDelay, mediumDelay, removeAutomationFingerprints } from "~lib/evasion"
+import { matchField, getProfileValue, formatValueForInput } from "~lib/field-matcher"
 
 /**
  * Workday field selectors mapped to profile data paths
@@ -385,14 +386,29 @@ export class WorkdayModule extends BaseATSModule {
       }
     }
     
-    // Check for unmapped required fields
-    const unmappedFields = await this.findUnmappedFields()
+    // Try to fill unmapped required fields using smart matching
+    const unmappedFields = this.findUnmappedFields()
+    this.log(`Found ${unmappedFields.length} unmapped fields, attempting smart match...`)
+    
     for (const field of unmappedFields) {
-      manualFields.push({
-        selector: field.selector,
-        label: field.label || "Unknown field",
-        reason: "Field not in standard mappings"
-      })
+      const result = await this.tryFillUnmappedField(field, profile)
+      
+      if (result.filled && result.profilePath && result.value) {
+        filledFields.push({
+          selector: field.selector,
+          profilePath: result.profilePath,
+          value: result.value,
+          success: true
+        })
+      } else {
+        manualFields.push({
+          selector: field.selector,
+          label: field.label || "Unknown field",
+          reason: "Could not auto-match to profile data"
+        })
+      }
+      
+      await shortDelay()
     }
     
     const duration = Date.now() - startTime
@@ -635,9 +651,67 @@ export class WorkdayModule extends BaseATSModule {
   
   private findUnmappedFields(): DetectedField[] {
     const mappedSelectors = new Set(WORKDAY_FIELD_MAPPINGS.map(m => m.selector))
-    return this.detectedFields.filter(f => 
-      f.required && !mappedSelectors.has(f.selector)
-    )
+    const mappedAutomationIds = new Set(WORKDAY_FIELD_MAPPINGS.map(m => m.automationId).filter(Boolean))
+    
+    return this.detectedFields.filter(f => {
+      // Skip honeypot fields
+      if (f.automationId === "beecatcher" || f.element.getAttribute("name") === "website") {
+        return false
+      }
+      // Check if it's already mapped
+      if (mappedSelectors.has(f.selector)) return false
+      if (f.automationId && mappedAutomationIds.has(f.automationId)) return false
+      // Only include required fields
+      return f.required
+    })
+  }
+  
+  /**
+   * Try to fill unmapped fields using the smart matcher
+   */
+  private async tryFillUnmappedField(
+    field: DetectedField, 
+    profile: ProfileData
+  ): Promise<{ filled: boolean; profilePath?: string; value?: string }> {
+    // Use the field matcher to find best profile path
+    const match = matchField(field, WORKDAY_FIELD_MAPPINGS)
+    
+    if (match.confidence < 0.6) {
+      this.log(`No confident match for field: ${field.label || field.selector} (confidence: ${match.confidence})`)
+      return { filled: false }
+    }
+    
+    // Get value from profile
+    const value = getProfileValue(profile, match.profilePath)
+    if (!value) {
+      this.log(`No profile value for matched path: ${match.profilePath}`)
+      return { filled: false }
+    }
+    
+    const formattedValue = formatValueForInput(value, field.type)
+    
+    try {
+      await humanScroll(field.element)
+      await shortDelay()
+      
+      const mapping: FieldMapping = {
+        selector: field.selector,
+        profilePath: match.profilePath,
+        type: field.type,
+        required: field.required
+      }
+      
+      const success = await this.fillField(field.element, mapping, formattedValue)
+      
+      if (success) {
+        this.log(`Smart-matched and filled: ${field.label} → ${match.profilePath} (${match.matchedBy}, confidence: ${match.confidence})`)
+        return { filled: true, profilePath: match.profilePath, value: formattedValue }
+      }
+    } catch (err) {
+      this.error(`Error filling smart-matched field:`, err)
+    }
+    
+    return { filled: false }
   }
   
   private getFieldType(element: HTMLElement): FieldMapping["type"] {

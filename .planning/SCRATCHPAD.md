@@ -87,8 +87,11 @@ Progress tracker. Updated after each major step.
   - Profile, Resume, Application, FieldMapping, FillResult
   - Extension imports from shared, adds extension-specific types
   - Both extension and dashboard builds verified
-- [ ] Phase 3.2: Field Matching Algorithm
-- [ ] Phase 3.3: Form Fill Execution
+- [x] Phase 3.2: Field Matching Algorithm ✅
+  - `lib/field-matcher.ts` — 5-strategy matching with confidence scoring
+  - Label variations for 20+ fields (English + some i18n)
+  - automation-id → label → placeholder → aria-label → name/id
+- [ ] Phase 3.3: Form Fill Execution — integrate matcher into Workday module
 
 ## Still TODO
 - [ ] Test on more Workday sites to verify selector consistency
