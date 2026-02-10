@@ -119,32 +119,46 @@ const WORKDAY_DETECTION = {
   applicationIndicators: [
     '[data-automation-id="quickApply"]',
     '[data-automation-id="applicationForm"]',
+    '[data-automation-id="applyFlowPage"]',  // Main apply flow wrapper
     '[data-automation-id="legalNameSection"]',
     '[data-automation-id="contactInformationSection"]',
     '[data-automation-id="myExperienceSection"]',
     '[data-automation-id="resumeSection"]',
     '[data-automation-id="questionSection"]',
     '[data-automation-id="bottom-navigation-next-button"]',
-    '[data-automation-id="progressBar"]'
+    '[data-automation-id="progressBar"]',
+    '[data-automation-id="progressBarActiveStep"]'
+  ],
+  
+  // Apply modal indicators (appears after clicking Apply button)
+  applyModalIndicators: [
+    '[data-automation-id="wd-popup-content"]',
+    '[data-automation-id="autofillWithResume"]',
+    '[data-automation-id="applyManually"]',
+    '[data-automation-id="useMyLastApplication"]',
+    '[data-automation-id="applyWithLinkedIn"]'
   ],
   
   // Job listing indicators (not application)
   listingIndicators: [
     '[data-automation-id="jobPostingHeader"]',
     '[data-automation-id="jobPostingDescription"]',
-    '[data-automation-id="jobRequisitionId"]',
-    'button[data-automation-id="applyButton"]:not([data-automation-id="bottom-navigation-next-button"])'
+    '[data-automation-id="requisitionId"]',
+    '[data-automation-id="adventureButton"]'  // Apply button is <a> tag with adventureButton, NOT applyButton
   ],
   
   // Login/account page indicators
   loginIndicators: [
     '[data-automation-id="signInContent"]',
+    '[data-automation-id="signInFormo"]',  // Note: intentional typo in Workday
     '[data-automation-id="createAccountLink"]',
+    '[data-automation-id="signInLink"]',  // Salesforce uses this
     '[data-automation-id="signInSubmitButton"]',
+    '[data-automation-id="createAccountSubmitButton"]',  // Salesforce uses this
     '[data-automation-id="GoogleSignInButton"]',
     '[data-automation-id="SignInWithEmailButton"]',
-    '[data-automation-id="email"][type="text"]',
-    '[data-automation-id="password"][type="password"]',
+    '[data-automation-id="formField-email"]',
+    '[data-automation-id="formField-password"]',
     '[data-automation-id="createAccountCheckbox"]'
   ],
   

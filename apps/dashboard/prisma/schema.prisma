@@ -59,11 +59,14 @@ model Profile {
   lastName  String?
   phone     String?
   linkedin  String?
+  github    String?
   portfolio String?
   
-  // Stored as JSON for flexibility
-  workHistory Json?
-  education   Json?
+  // Stored as JSON strings for flexibility
+  address           String? @db.Text
+  workAuthorization String? @db.Text
+  workHistory       Json?
+  education         Json?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
