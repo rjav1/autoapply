@@ -31,7 +31,7 @@ Progress tracker. Updated after each major step.
 
 ---
 
-## Current Status: Monorepo Scaffolded ✅
+## Current Status: Phase 1 Ready to Start 🚀
 
 ## Completed Steps
 
@@ -52,13 +52,16 @@ Progress tracker. Updated after each major step.
   - apps/dashboard/ — Next.js 15 dashboard
   - packages/shared/ — Shared types & utils
 - [x] **Prisma schema initialized** — User, Profile, Resume, Application models
+- [x] **pnpm install** — All dependencies installed
+- [x] **Extension builds** — `pnpm plasmo build` works ✅
+- [x] **Dashboard builds** — `pnpm next build` works ✅
+- [x] **Git commit** — All scaffold files committed
 
 ## In Progress
 
-- [ ] pnpm install (dependencies)
-- [ ] GitHub repo creation + push
-- [ ] Basic extension popup
-- [ ] Dashboard auth setup
+- [ ] GitHub repo creation + push (need `gh` CLI or manual setup)
+- [ ] Phase 1.1: Extension skeleton (popup, background, content scripts)
+- [ ] Phase 1.2: Dashboard auth setup (NextAuth + Google OAuth)
 
 ## Decisions Made
 
