@@ -80,9 +80,18 @@ Progress tracker. Updated after each major step.
   - Updated detection selectors with real values
   - Documented findings in ERRORS.md
 
-## Next Up
-- [ ] Phase 3: Auto-Fill Engine — implement actual form filling logic
-- [ ] Need to test on more Workday sites to verify selector consistency
+## Phase 3 Progress
+
+- [x] Phase 3.1: Profile Data Structure ✅
+  - `packages/shared/src/index.ts` — comprehensive types
+  - Profile, Resume, Application, FieldMapping, FillResult
+  - Extension imports from shared, adds extension-specific types
+  - Both extension and dashboard builds verified
+- [ ] Phase 3.2: Field Matching Algorithm
+- [ ] Phase 3.3: Form Fill Execution
+
+## Still TODO
+- [ ] Test on more Workday sites to verify selector consistency
 
 ## Decisions Made
 
